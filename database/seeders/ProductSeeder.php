@@ -13,35 +13,35 @@ class ProductSeeder extends Seeder
             [
                 'name' => 'Smartphone XYZ',
                 'description' => 'Smartphone terbaru dengan spesifikasi tinggi',
-                'price' => 2500000,
+                'price' => 350,
                 'image' => 'products/smartphone.jpg',
                 'stock' => 15
             ],
             [
                 'name' => 'Laptop Pro',
                 'description' => 'Laptop dengan performa tinggi untuk kebutuhan profesional',
-                'price' => 9500000,
+                'price' => 150,
                 'image' => 'products/laptop.jpg',
                 'stock' => 8
             ],
             [
                 'name' => 'Smart Watch',
                 'description' => 'Jam tangan pintar dengan berbagai fitur canggih',
-                'price' => 1200000,
+                'price' => 120,
                 'image' => 'products/smartwatch.jpg',
                 'stock' => 20
             ],
             [
                 'name' => 'Wireless Earbuds',
                 'description' => 'Earbuds wireless dengan kualitas suara premium',
-                'price' => 800000,
+                'price' => 100,
                 'image' => 'products/earbuds.jpg',
                 'stock' => 25
             ],
             [
                 'name' => 'Digital Camera',
                 'description' => 'Kamera digital dengan hasil jepretan profesional',
-                'price' => 3500000,
+                'price' => 200,
                 'image' => 'products/camera.jpg',
                 'stock' => 10
             ],
