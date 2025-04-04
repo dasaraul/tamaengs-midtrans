@@ -15,7 +15,7 @@
     <div class="row">
         <div class="col-md-5">
             <div class="card">
-                <img src="{{ asset('storage/' . $product->image) }}" class="card-img-top img-fluid" alt="{{ $product->name }}" style="max-height: 400px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'">
+                <img src="{{ $product->imageUrl }}" class="card-img-top img-fluid" alt="{{ $product->name }}" style="max-height: 400px; object-fit: cover;">
             </div>
         </div>
         

@@ -9,7 +9,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 
 // Home Route
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 // Auth Routes
 Auth::routes();
@@ -38,6 +38,21 @@ Route::post('/payment/notification', [PaymentController::class, 'notification'])
 Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
 Route::get('/payment/unfinish', [PaymentController::class, 'unfinish'])->name('payment.unfinish');
 Route::get('/payment/error', [PaymentController::class, 'error'])->name('payment.error');
+
+// Ini admin panel nya
+Route::group(['middleware' => ['auth'], 'prefix' => 'admin', 'as' => 'admin.'], function() {
+    Route::resource('products', Admin\ProductController::class);
+});
+
+// Admin Routes
+Route::prefix('admin')->middleware(['auth', 'is_admin'])->name('admin.')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('dashboard');
+    
+    // Perbaiki namespace di sini
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+});
 
 // Debug Midtrans Route
 Route::get('/debug-midtrans', function () {

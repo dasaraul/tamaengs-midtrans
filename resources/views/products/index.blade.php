@@ -30,7 +30,7 @@
         <div class="col-md-4 mb-4">
             <div class="card h-100">
                 <div class="position-relative">
-                    <img src="{{ asset('storage/' . $product->image) }}" class="card-img-top" alt="{{ $product->name }}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                    <img src="{{ $product->imageUrl }}" class="card-img-top" alt="{{ $product->name }}" style="height: 200px; object-fit: cover;">
                     @if($product->stock <= 0)
                         <div class="position-absolute top-0 end-0 bg-danger text-white p-2 m-2 rounded">Habis</div>
                     @elseif($product->stock <= 5)

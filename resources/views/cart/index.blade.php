@@ -31,11 +31,14 @@
                             <tbody>
                                 @php $total = 0 @endphp
                                 @foreach(session('cart') as $id => $details)
-                                    @php $total += $details['price'] * $details['quantity'] @endphp
+                                    @php 
+                                        $total += $details['price'] * $details['quantity'];
+                                        $product = App\Models\Product::find($id);
+                                    @endphp
                                     <tr data-id="{{ $id }}">
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <img src="{{ asset('storage/' . $details['image']) }}" alt="{{ $details['name'] }}" class="img-thumbnail me-3" style="width: 80px; height: 60px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/80x60?text=No+Image'">
+                                                <img src="{{ $product ? $product->imageUrl : 'https://via.placeholder.com/80x60?text=No+Image' }}" alt="{{ $details['name'] }}" class="img-thumbnail me-3" style="width: 80px; height: 60px; object-fit: cover;">
                                                 <div>
                                                     <h6 class="mb-0">{{ $details['name'] }}</h6>
                                                 </div>
