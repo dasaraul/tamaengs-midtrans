@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-use Illuminate\Suppt\Facades\Log;
+use Illuminate\Support\Facades\Log;
 
 class MidtransHelper
 {
