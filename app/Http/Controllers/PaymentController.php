@@ -6,23 +6,21 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
-use App\Helpers\MidtransHelper;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
-        // Inisialisasi konfigurasi Midtrans di constructor
-        MidtransHelper::initMidtransConfig();
+        $this->middleware('auth')->except(['notification']);
+        // Don't initialize Midtrans config in constructor
     }
 
     public function show($id)
     {
         try {
-            // Debug untuk menemukan masalah
-            Log::info('Payment start:', ['order_id' => $id]);
+            // Debug for tracing
+            Log::info('Payment show method started:', ['order_id' => $id]);
             
             $order = Order::findOrFail($id);
             
@@ -32,20 +30,34 @@ class PaymentController extends Controller
             }
 
             if (empty($order->snap_token)) {
-                // Jika tidak ada snap token, coba regenerate
+                // If no snap token, generate one
                 try {
-                    MidtransHelper::initMidtransConfig();
+                    // Initialize Midtrans Config directly
+                    $serverKey = config('midtrans.server_key');
+                    $clientKey = config('midtrans.client_key');
+                    $isProduction = config('midtrans.is_production');
                     
-                    // Generate order_id dengan format ORD-ID-TIMESTAMP
-                    $orderId = 'ORD-' . $order->id . '-' . time();
-                    
-                    // Pastikan gross_amount lebih dari 0.01 (disadari dari error)
-                    $grossAmount = (int)$order->total_price;
-                    if ($grossAmount < 1) {
-                        $grossAmount = 10000; // Fallback ke nilai default
+                    if (empty($serverKey) || empty($clientKey)) {
+                        throw new \Exception('Midtrans keys are not properly configured. Please contact the administrator.');
                     }
                     
-                    // Sangat disederhanakan tanpa mengakses order item atau products
+                    // Set Midtrans configuration directly
+                    \Midtrans\Config::$serverKey = $serverKey;
+                    \Midtrans\Config::$clientKey = $clientKey;
+                    \Midtrans\Config::$isProduction = $isProduction;
+                    \Midtrans\Config::$isSanitized = true;
+                    \Midtrans\Config::$is3ds = true;
+                    
+                    // Generate order_id with format ORD-ID-TIMESTAMP
+                    $orderId = 'ORD-' . $order->id . '-' . time();
+                    
+                    // Make sure gross_amount is valid (must be at least 1)
+                    $grossAmount = (int)$order->total_price;
+                    if ($grossAmount < 1) {
+                        $grossAmount = 10000; // Fallback to default value
+                    }
+                    
+                    // Simple params structure for Midtrans
                     $params = [
                         'transaction_details' => [
                             'order_id' => $orderId,
@@ -57,18 +69,20 @@ class PaymentController extends Controller
                         ],
                     ];
                     
-                    Log::info('Midtrans params:', ['params' => $params]);
+                    Log::info('Midtrans params prepared:', ['params' => $params]);
                     
+                    // Get snap token from Midtrans
                     $snapToken = \Midtrans\Snap::getSnapToken($params);
-                    Log::info('Snap token generated:', ['token' => $snapToken]);
+                    Log::info('Snap token successfully generated:', ['token' => $snapToken]);
                     
+                    // Save the token and transaction ID
                     $order->snap_token = $snapToken;
-                    $order->transaction_id = $orderId; // Simpan order_id yang digunakan di Midtrans
+                    $order->transaction_id = $orderId;
                     $order->save();
                     
-                    Log::info('Token saved to order');
+                    Log::info('Order updated with token');
                 } catch (\Exception $e) {
-                    Log::error('Midtrans Payment Error: ' . $e->getMessage(), [
+                    Log::error('Midtrans Token Generation Error: ' . $e->getMessage(), [
                         'order_id' => $order->id,
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
@@ -78,12 +92,13 @@ class PaymentController extends Controller
                 }
             }
 
+            // Return the view with necessary data
             $clientKey = config('midtrans.client_key');
             $isProduction = config('midtrans.is_production');
 
             return view('payment.show', compact('order', 'clientKey', 'isProduction'));
         } catch (\Exception $e) {
-            Log::error('Payment Show Error: ' . $e->getMessage(), [
+            Log::error('Payment Show Method Error: ' . $e->getMessage(), [
                 'order_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -95,16 +110,19 @@ class PaymentController extends Controller
 
     public function notification(Request $request)
     {
-        MidtransHelper::initMidtransConfig();
-        
+        // Initialize Midtrans Config directly
         $serverKey = config('midtrans.server_key');
+        \Midtrans\Config::$serverKey = $serverKey;
+        \Midtrans\Config::$isProduction = config('midtrans.is_production');
+        \Midtrans\Config::$isSanitized = true;
+        \Midtrans\Config::$is3ds = true;
         
         try {
             $notification = new \Midtrans\Notification();
             
             Log::info('Midtrans notification received', ['order_id' => $notification->order_id]);
             
-            // Cari order berdasarkan transaction_id yang disimpan sebelumnya
+            // Find order based on transaction_id
             $order = Order::where('transaction_id', $notification->order_id)->first();
             
             if (!$order) {
@@ -144,21 +162,24 @@ class PaymentController extends Controller
 
     public function finish(Request $request)
     {
-        Log::info('Payment finish', ['request' => $request->all()]);
+        // Fix: Don't try to find an Order model with 'finish'
+        Log::info('Payment finish callback received', ['request' => $request->all()]);
+        
+        // Only redirect to orders.index with success message
         return redirect()->route('orders.index')
             ->with('success', 'Pembayaran berhasil, Pesanan Anda sedang diproses');
     }
 
     public function unfinish(Request $request)
     {
-        Log::info('Payment unfinish', ['request' => $request->all()]);
+        Log::info('Payment unfinish callback received', ['request' => $request->all()]);
         return redirect()->route('orders.index')
             ->with('info', 'Pembayaran belum selesai, silakan selesaikan pembayaran Anda');
     }
 
     public function error(Request $request)
     {
-        Log::error('Payment error', ['request' => $request->all()]);
+        Log::error('Payment error callback received', ['request' => $request->all()]);
         return redirect()->route('orders.index')
             ->with('error', 'Pembayaran gagal, silakan coba lagi nanti');
     }

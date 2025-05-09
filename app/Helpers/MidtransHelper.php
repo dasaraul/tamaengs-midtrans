@@ -8,11 +8,12 @@ class MidtransHelper
 {
     public static function initMidtransConfig()
     {
-        // Log konfigurasi untuk debugging
+        // Get config values
         $serverKey = config('midtrans.server_key');
         $clientKey = config('midtrans.client_key');
         $isProduction = config('midtrans.is_production');
         
+        // Log configuration for debugging
         Log::info('Midtrans Configuration', [
             'server_key_exists' => !empty($serverKey),
             'client_key_exists' => !empty($clientKey),
@@ -23,16 +24,13 @@ class MidtransHelper
             Log::warning('Midtrans keys not properly configured');
         }
         
+        // Set Midtrans configuration
         \Midtrans\Config::$serverKey = $serverKey;
         \Midtrans\Config::$clientKey = $clientKey;
         \Midtrans\Config::$isProduction = $isProduction;
         \Midtrans\Config::$isSanitized = true;
         \Midtrans\Config::$is3ds = true;
         
-        // Set timeouts untuk menghindari masalah koneksi
-        \Midtrans\Config::$curlOptions = [
-            CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_TIMEOUT => 60
-        ];
+        // Don't set curlOptions as they might be causing the issue
     }
 }
