@@ -21,7 +21,13 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_admin', // Tambahkan ini
+        'role',
+        'is_active',
+        'phone',
+        'institution',
+        'faculty',
+        'npm',
+        'semester'
     ];
 
     /**
@@ -43,12 +49,74 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-
+    
     /**
-     * Relasi ke model Order
+     * Check if user has specific role
+     */
+    public function hasRole($role)
+    {
+        return $this->role === $role;
+    }
+    
+    /**
+     * Check if user is Kiw (Super Admin)
+     */
+    public function isKiw()
+    {
+        return $this->hasRole('kiw');
+    }
+    
+    /**
+     * Check if user is Admin
+     */
+    public function isAdmin()
+    {
+        return $this->hasRole('admin') || $this->isKiw();
+    }
+    
+    /**
+     * Check if user is Juri
+     */
+    public function isJuri()
+    {
+        return $this->hasRole('juri');
+    }
+    
+    /**
+     * Check if user is Peserta
+     */
+    public function isPeserta()
+    {
+        return $this->hasRole('peserta');
+    }
+    
+    /**
+     * Get orders related to this user
      */
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+    
+    /**
+     * Get evaluations given by this user (as juri)
+     */
+    public function evaluations()
+    {
+        return $this->hasMany(Evaluation::class);
+    }
+    
+    /**
+     * Get competitions assigned to this juri
+     */
+    public function assignedCompetitions()
+    {
+        if (!$this->isJuri()) {
+            return collect();
+        }
+        
+        return Product::whereHas('evaluations', function ($query) {
+            $query->where('user_id', $this->id);
+        })->get();
     }
 }

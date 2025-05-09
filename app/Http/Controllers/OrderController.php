@@ -23,7 +23,7 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $order = Order::with('items.product')->findOrFail($id);
+        $order = Order::with('items.product', 'members')->findOrFail($id);
         
         // Check if order belongs to logged-in user
         if ($order->user_id != Auth::id()) {

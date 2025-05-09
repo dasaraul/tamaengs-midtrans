@@ -9,27 +9,50 @@ class CartController extends Controller
 {
     public function index()
     {
+        // Pastikan semua item di cart memiliki kunci 'description'
+        $cart = session()->get('cart', []);
+        
+        // Jika ada cart yang tidak memiliki description, tambahkan description kosong
+        foreach ($cart as $id => $item) {
+            if (!isset($item['description'])) {
+                $product = Product::find($id);
+                if ($product) {
+                    $cart[$id]['description'] = $product->description ?? '';
+                } else {
+                    $cart[$id]['description'] = '';
+                }
+            }
+        }
+        
+        // Update session cart
+        session()->put('cart', $cart);
+        
         return view('cart.index');
     }
 
     public function add(Request $request)
     {
-        $product = Product::findOrFail($request->id);
+        // Ambil ID produk dari request (bisa dari product_id atau id)
+        $productId = $request->product_id ?? $request->id;
+        $product = Product::findOrFail($productId);
         $cart = session()->get('cart', []);
 
-        if (isset($cart[$request->id])) {
-            $cart[$request->id]['quantity'] += $request->quantity;
+        if (isset($cart[$productId])) {
+            // Lomba sudah ada di pendaftaran
+            return redirect()->back()->with('info', 'Anda sudah mendaftar untuk kompetisi ini.');
         } else {
-            $cart[$request->id] = [
+            // Tambahkan lomba ke pendaftaran dengan semua data yang diperlukan
+            $cart[$productId] = [
                 "name" => $product->name,
-                "quantity" => $request->quantity,
+                "quantity" => 1, 
                 "price" => $product->price,
-                "image" => $product->image
+                "image" => $product->image,
+                "description" => $product->description ?? '' // Pastikan description selalu ada
             ];
         }
 
         session()->put('cart', $cart);
-        return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
+        return redirect()->back()->with('success', 'Kompetisi berhasil ditambahkan ke pendaftaran!');
     }
 
     public function update(Request $request)
@@ -39,7 +62,7 @@ class CartController extends Controller
             $cart[$request->id]["quantity"] = $request->quantity;
             session()->put('cart', $cart);
         }
-        return redirect()->back()->with('success', 'Keranjang berhasil diperbarui!');
+        return redirect()->back()->with('success', 'Pendaftaran berhasil diperbarui!');
     }
 
     public function remove(Request $request)
@@ -51,6 +74,6 @@ class CartController extends Controller
                 session()->put('cart', $cart);
             }
         }
-        return redirect()->back()->with('success', 'Produk berhasil dihapus dari keranjang!');
+        return redirect()->back()->with('success', 'Kompetisi berhasil dihapus dari pendaftaran!');
     }
 }

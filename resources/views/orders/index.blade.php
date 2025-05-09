@@ -20,7 +20,7 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Order #</th>
+                                <th>Order</th>
                                 <th>Date</th>
                                 <th>Total</th>
                                 <th>Status</th>
@@ -31,9 +31,9 @@
                         <tbody>
                             @foreach($orders as $order)
                                 <tr>
-                                    <td>{{ $order->order_number }}</td>
+                                    <td>{{ $order->transaction_id ?? ('ORD-' . $order->id) }}</td>
                                     <td>{{ $order->created_at->format('d M Y, H:i') }}</td>
-                                    <td>Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
+                                    <td>Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
                                     <td>
                                         @if($order->status == 'pending')
                                             <span class="badge bg-warning text-dark">Pending</span>

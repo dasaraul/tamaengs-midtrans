@@ -16,12 +16,12 @@
         <div class="col-md-8">
             <div class="card text-center">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Payment for Order #{{ $order->order_number }}</h4>
+                    <h4 class="mb-0">Payment for Order #{{ $order->transaction_id ?? $order->id }}</h4>
                 </div>
                 <div class="card-body py-5">
                     <div class="mb-4">
                         <i class="fas fa-credit-card fa-5x text-primary mb-3"></i>
-                        <h3>Total Amount: Rp {{ number_format($order->total_amount, 0, ',', '.') }}</h3>
+                        <h3>Total Amount: Rp {{ number_format($order->total_price, 0, ',', '.') }}</h3>
                         <p class="text-muted">Please complete your payment to confirm your order</p>
                     </div>
                     
@@ -60,17 +60,17 @@
             onSuccess: function(result) {
                 console.log('success');
                 console.log(result);
-                window.location.href = '{{ route('payment.finish') }}?order_id={{ $order->order_number }}&status=success';
+                window.location.href = '{{ route('payment.finish') }}?order_id={{ $order->transaction_id ?? $order->id }}&status=success';
             },
             onPending: function(result) {
                 console.log('pending');
                 console.log(result);
-                window.location.href = '{{ route('payment.unfinish') }}?order_id={{ $order->order_number }}&status=pending';
+                window.location.href = '{{ route('payment.unfinish') }}?order_id={{ $order->transaction_id ?? $order->id }}&status=pending';
             },
             onError: function(result) {
                 console.log('error');
                 console.log(result);
-                window.location.href = '{{ route('payment.error') }}?order_id={{ $order->order_number }}&status=error';
+                window.location.href = '{{ route('payment.error') }}?order_id={{ $order->transaction_id ?? $order->id }}&status=error';
             },
             onClose: function() {
                 console.log('customer closed the popup without finishing the payment');

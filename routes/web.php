@@ -1,73 +1,145 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProfileController;
 
-// Home Route
-Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
-
-// Auth Routes
+// Auth Routes (tanpa verifikasi email)
 Auth::routes();
 
-// Product Routes
-Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
+// Public Routes - mengubah home ke index
+Route::get('/', function () {
+    return view('home');
+})->name('home');
 
-// Cart Routes
-Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
-Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-Route::patch('/cart/update', [CartController::class, 'update'])->name('cart.update');
-Route::delete('/cart/remove', [CartController::class, 'remove'])->name('cart.remove');
-
-// Checkout Routes
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-
-// Order Routes
-Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
-
-// Payment Routes
-Route::get('/payment/{id}', [PaymentController::class, 'show'])->name('payment.show');
-Route::post('/payment/notification', [PaymentController::class, 'notification'])->name('payment.notification');
-Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
-Route::get('/payment/unfinish', [PaymentController::class, 'unfinish'])->name('payment.unfinish');
-Route::get('/payment/error', [PaymentController::class, 'error'])->name('payment.error');
-
-// Ini admin panel nya
-Route::group(['middleware' => ['auth'], 'prefix' => 'admin', 'as' => 'admin.'], function() {
-    Route::resource('products', Admin\ProductController::class);
+// Competition Routes (renamed from products)
+Route::controller(ProductController::class)->group(function () {
+    Route::get('/competitions', 'index')->name('products.index');
+    Route::get('/competitions/{id}', 'show')->name('products.show');
 });
+
+// Registration Process Routes
+Route::controller(CartController::class)->group(function () {
+    Route::get('/registration', 'index')->name('cart.index');
+    Route::post('/registration/add', 'add')->name('cart.add');
+    Route::patch('/registration/update', 'update')->name('cart.update');
+    Route::delete('/registration/remove', 'remove')->name('cart.remove');
+});
+
+// Checkout Routes - Requires Authentication
+Route::middleware('auth')->group(function () {
+    // Checkout
+    Route::controller(CheckoutController::class)->prefix('checkout')->name('checkout.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/process', 'process')->name('process');
+    });
+    
+    // Orders
+    Route::controller(OrderController::class)->prefix('registrations')->name('orders.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{id}', 'show')->name('show');
+    });
+    
+    // Payment
+    Route::controller(PaymentController::class)->prefix('payment')->name('payment.')->group(function () {
+        Route::get('/{id}', 'show')->name('show');
+        Route::get('/finish', 'finish')->name('finish');
+        Route::get('/unfinish', 'unfinish')->name('unfinish');
+        Route::get('/error', [PaymentController::class, 'error'])->name('error');
+    });
+    
+    // Profile
+    Route::controller(ProfileController::class)->prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', 'edit')->name('edit');
+        Route::put('/', 'update')->name('update');
+    });
+    
+    // Participant Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\Participant\DashboardController::class, 'index'])
+        ->middleware('check_permission:peserta')
+        ->name('dashboard');
+});
+
+// Payment Notification (Midtrans webhook) - No auth required
+Route::post('/payment/notification', [PaymentController::class, 'notification'])->name('payment.notification');
 
 // Admin Routes
-Route::prefix('admin')->middleware(['auth', 'is_admin'])->name('admin.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('dashboard');
+Route::prefix('admin')->middleware(['auth', 'check_permission:admin'])->name('admin.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
     
-    // Perbaiki namespace di sini
-    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    // Resource Routes for Admin
+    Route::resources([
+        'competitions' => App\Http\Controllers\Admin\CompetitionController::class,
+        'participants' => App\Http\Controllers\Admin\ParticipantController::class,
+        'judges' => App\Http\Controllers\Admin\JudgeController::class,
+        'registrations' => App\Http\Controllers\Admin\RegistrationController::class,
+        'submissions' => App\Http\Controllers\Admin\SubmissionController::class,
+        'evaluations' => App\Http\Controllers\Admin\EvaluationController::class,
+        'payments' => App\Http\Controllers\Admin\PaymentController::class,
+    ]);
+    
+    Route::get('/reports', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
 });
 
-// Debug Midtrans Route
-Route::get('/debug-midtrans', function () {
-    \App\Helpers\MidtransHelper::initMidtransConfig();
+// Judge Routes
+Route::prefix('judge')->middleware(['auth', 'check_permission:juri'])->name('judge.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Judge\DashboardController::class, 'index'])->name('dashboard');
     
-    $debug = [
-        'server_key' => \Midtrans\Config::$serverKey,
-        'client_key' => \Midtrans\Config::$clientKey,
-        'is_production' => \Midtrans\Config::$isProduction,
-        'env_values' => [
-            'server_key' => config('midtrans.server_key'),
-            'client_key' => config('midtrans.client_key'),
-            'is_production' => config('midtrans.is_production'),
-        ]
-    ];
+    // Resource Routes for Judge
+    Route::resources([
+        'competitions' => App\Http\Controllers\Judge\CompetitionController::class,
+        'submissions' => App\Http\Controllers\Judge\SubmissionController::class,
+        'evaluations' => App\Http\Controllers\Judge\EvaluationController::class,
+    ]);
+});
+
+// Super Admin (KIW) Routes
+Route::prefix('kiw')->middleware(['auth', 'check_role:kiw'])->name('kiw.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\Kiw\DashboardController::class, 'index'])->name('dashboard');
     
-    return response()->json($debug);
-})->middleware('auth');
+    // Resource Routes for Super Admin
+    Route::resources([
+        'users' => App\Http\Controllers\Kiw\UserController::class,
+        'roles' => App\Http\Controllers\Kiw\RoleController::class,
+        'competitions' => App\Http\Controllers\Kiw\CompetitionController::class,
+        'evaluations' => App\Http\Controllers\Kiw\EvaluationController::class,
+        'submissions' => App\Http\Controllers\Kiw\SubmissionController::class,
+        'payments' => App\Http\Controllers\Kiw\PaymentController::class,
+    ]);
+    
+    // Tambahkan route baru untuk kriteria penilaian kompetisi
+    Route::controller(App\Http\Controllers\Kiw\CompetitionController::class)->prefix('competitions')->name('competitions.')->group(function () {
+        Route::get('/{competition}/criteria', 'criteria')->name('criteria');
+        Route::post('/{competition}/criteria', 'storeCriteria')->name('criteria.store');
+        Route::put('/{competition}/criteria/{criterion}', 'updateCriteria')->name('criteria.update');
+        Route::delete('/{competition}/criteria/{criterion}', 'destroyCriteria')->name('criteria.destroy');
+    });
+    
+    Route::get('/reports', [App\Http\Controllers\Kiw\ReportController::class, 'index'])->name('reports.index');
+    Route::get('/settings', [App\Http\Controllers\Kiw\SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [App\Http\Controllers\Kiw\SettingController::class, 'update'])->name('settings.update');
+});
+
+// Debug Midtrans Route (only in non-production environment)
+if (!app()->environment('production')) {
+    Route::get('/debug-midtrans', function () {
+        \App\Helpers\MidtransHelper::initMidtransConfig();
+        
+        return response()->json([
+            'server_key' => \Midtrans\Config::$serverKey,
+            'client_key' => \Midtrans\Config::$clientKey,
+            'is_production' => \Midtrans\Config::$isProduction,
+            'env_values' => [
+                'server_key' => config('midtrans.server_key'),
+                'client_key' => config('midtrans.client_key'),
+                'is_production' => config('midtrans.is_production'),
+            ]
+        ]);
+    })->middleware('auth');
+}

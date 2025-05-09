@@ -2,112 +2,247 @@
 
 @section('title', 'Dashboard Admin')
 
-@section('header', 'Dashboard')
-
 @section('content')
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card bg-primary text-white h-100">
-            <div class="card-body py-5">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title">Total Produk</h5>
-                        <h2 class="mb-0">{{ \App\Models\Product::count() }}</h2>
-                    </div>
-                    <i class="fas fa-box fa-3x opacity-50"></i>
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Dashboard Admin</h1>
+        <div>
+            <span class="badge bg-primary p-2">UNAS Fest 2025</span>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100" style="border-left-color: var(--primary-color);">
+                <div class="card-body">
+                    <div class="card-title">Total Peserta</div>
+                    <div class="card-value">{{ $totalParticipants }}</div>
+                    <i class="fas fa-users card-icon" style="color: var(--primary-color);"></i>
                 </div>
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a href="{{ route('admin.products.index') }}" class="text-white stretched-link">Lihat Detail</a>
-                <i class="fas fa-angle-right text-white"></i>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100" style="border-left-color: var(--success-color);">
+                <div class="card-body">
+                    <div class="card-title">Pendaftaran Aktif</div>
+                    <div class="card-value">{{ $activeRegistrations }}</div>
+                    <i class="fas fa-clipboard-list card-icon" style="color: var(--success-color);"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100" style="border-left-color: var(--warning-color);">
+                <div class="card-body">
+                    <div class="card-title">Menunggu Pembayaran</div>
+                    <div class="card-value">{{ $pendingPayments }}</div>
+                    <i class="fas fa-money-bill-wave card-icon" style="color: var(--warning-color);"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100" style="border-left-color: var(--info-color);">
+                <div class="card-body">
+                    <div class="card-title">Karya Terkumpul</div>
+                    <div class="card-value">{{ $totalSubmissions }}</div>
+                    <i class="fas fa-file-alt card-icon" style="color: var(--info-color);"></i>
+                </div>
             </div>
         </div>
     </div>
-
-    <div class="col-md-4 mb-4">
-        <div class="card bg-success text-white h-100">
-            <div class="card-body py-5">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title">Total Pesanan</h5>
-                        <h2 class="mb-0">{{ \App\Models\Order::count() }}</h2>
+    
+    <div class="row">
+        <div class="col-xl-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Statistik Pendaftaran</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chartDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Bulanan
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="chartDropdown">
+                            <li><a class="dropdown-item" href="#">Harian</a></li>
+                            <li><a class="dropdown-item" href="#">Mingguan</a></li>
+                            <li><a class="dropdown-item active" href="#">Bulanan</a></li>
+                        </ul>
                     </div>
-                    <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
+                </div>
+                <div class="card-body">
+                    <canvas id="registrationChart" height="300"></canvas>
                 </div>
             </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a href="#" class="text-white stretched-link">Lihat Detail</a>
-                <i class="fas fa-angle-right text-white"></i>
+        </div>
+        
+        <div class="col-xl-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <span>Distribusi Kompetisi</span>
+                </div>
+                <div class="card-body">
+                    <canvas id="competitionDistributionChart" height="300"></canvas>
+                </div>
             </div>
         </div>
     </div>
-
-    <div class="col-md-4 mb-4">
-        <div class="card bg-info text-white h-100">
-            <div class="card-body py-5">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title">Total Pengguna</h5>
-                        <h2 class="mb-0">{{ \App\Models\User::count() }}</h2>
-                    </div>
-                    <i class="fas fa-users fa-3x opacity-50"></i>
+    
+    <div class="row">
+        <div class="col-xl-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Pendaftaran Terbaru</span>
+                    <a href="{{ route('admin.registrations.index') }}" class="btn btn-sm btn-primary">Lihat Semua</a>
                 </div>
-            </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a href="#" class="text-white stretched-link">Lihat Detail</a>
-                <i class="fas fa-angle-right text-white"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Pesanan Terbaru</h5>
-            </div>
-            <div class="card-body">
-                @if(\App\Models\Order::count() > 0)
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
+                        <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th>Order #</th>
-                                    <th>Pelanggan</th>
-                                    <th>Total</th>
+                                    <th>ID</th>
+                                    <th>Tim</th>
+                                    <th>Kompetisi</th>
                                     <th>Status</th>
                                     <th>Tanggal</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach(\App\Models\Order::latest()->take(5)->get() as $order)
-                                    <tr>
-                                        <td>{{ $order->order_number }}</td>
-                                        <td>{{ $order->user->name }}</td>
-                                        <td>Rp {{ number_format($order->total_amount, 0, ',', '.') }}</td>
-                                        <td>
-                                            @if($order->status == 'pending')
-                                                <span class="badge bg-warning text-dark">Pending</span>
-                                            @elseif($order->status == 'processing')
-                                                <span class="badge bg-info">Processing</span>
-                                            @elseif($order->status == 'completed')
-                                                <span class="badge bg-success">Completed</span>
-                                            @elseif($order->status == 'cancelled')
-                                                <span class="badge bg-danger">Cancelled</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $order->created_at->format('d M Y, H:i') }}</td>
-                                    </tr>
-                                @endforeach
+                                @forelse($latestRegistrations as $registration)
+                                <tr>
+                                    <td>#{{ $registration->id }}</td>
+                                    <td>{{ $registration->team_name }}</td>
+                                    <td>{{ $registration->getCompetitionNames() }}</td>
+                                    <td>
+                                        @if($registration->payment_status == 'paid')
+                                            <span class="badge bg-success">Lunas</span>
+                                        @else
+                                            <span class="badge bg-warning text-dark">Belum Dibayar</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $registration->created_at->format('d M Y') }}</td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="text-center">Belum ada pendaftaran</td>
+                                </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
-                @else
-                    <p class="text-center">Belum ada pesanan.</p>
-                @endif
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Karya Terbaru</span>
+                    <a href="{{ route('admin.submissions.index') }}" class="btn btn-sm btn-primary">Lihat Semua</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Tim</th>
+                                    <th>Judul</th>
+                                    <th>Kompetisi</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($latestSubmissions as $submission)
+                                <tr>
+                                    <td>#{{ $submission->id }}</td>
+                                    <td>{{ $submission->order->team_name }}</td>
+                                    <td>{{ Str::limit($submission->title, 20) }}</td>
+                                    <td>{{ $submission->competition->name }}</td>
+                                    <td>
+                                        @if($submission->status == 'approved')
+                                            <span class="badge bg-success">Diterima</span>
+                                        @elseif($submission->status == 'rejected')
+                                            <span class="badge bg-danger">Ditolak</span>
+                                        @else
+                                            <span class="badge bg-secondary">Menunggu</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="5" class="text-center">Belum ada karya yang dikirimkan</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Registration Chart
+        const registrationCtx = document.getElementById('registrationChart').getContext('2d');
+        const registrationChart = new Chart(registrationCtx, {
+            type: 'line',
+            data: {
+                labels: {!! json_encode($registrationChartData['labels']) !!},
+                datasets: [{
+                    label: 'Pendaftaran',
+                    data: {!! json_encode($registrationChartData['data']) !!},
+                    backgroundColor: 'rgba(46, 134, 222, 0.2)',
+                    borderColor: 'rgba(46, 134, 222, 1)',
+                    borderWidth: 2,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Competition Distribution Chart
+        const competitionCtx = document.getElementById('competitionDistributionChart').getContext('2d');
+        const competitionChart = new Chart(competitionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {!! json_encode($competitionChartData['labels']) !!},
+                datasets: [{
+                    data: {!! json_encode($competitionChartData['data']) !!},
+                    backgroundColor: [
+                        'rgba(46, 134, 222, 0.8)',
+                        'rgba(243, 156, 18, 0.8)',
+                        'rgba(39, 174, 96, 0.8)',
+                        'rgba(231, 76, 60, 0.8)',
+                        'rgba(155, 89, 182, 0.8)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
 @endsection
