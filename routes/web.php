@@ -46,12 +46,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}', 'show')->name('show');
     });
     
-    // Payment - IMPORTANT CHANGE: Moved finish/unfinish/error routes BEFORE the {id} route to avoid conflicts
-    Route::controller(PaymentController::class)->prefix('payment')->name('payment.')->group(function () {
-        Route::get('/finish', 'finish')->name('finish');
-        Route::get('/unfinish', 'unfinish')->name('unfinish');
-        Route::get('/error', 'error')->name('error');
-        Route::get('/{id}', 'show')->name('show');
+    // Payment - Fixed routes
+    Route::prefix('payment')->name('payment.')->group(function () {
+        Route::get('/finish', [PaymentController::class, 'finish'])->name('finish');
+        Route::get('/unfinish', [PaymentController::class, 'unfinish'])->name('unfinish');
+        Route::get('/error', [PaymentController::class, 'error'])->name('error');
+        Route::get('/{id}', [PaymentController::class, 'show'])->name('show');
     });
     
     // Profile
